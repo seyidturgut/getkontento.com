@@ -2,7 +2,7 @@
 deployment:
   tasks:
     # Frontend Build and Deploy
-    - export DEPLOYPATH=/home/USERNAME/public_html/
+    - export DEPLOYPATH=/home/getkontento/public_html/
     - echo "Building frontend..."
     - /bin/npm install
     - /bin/npm run build
