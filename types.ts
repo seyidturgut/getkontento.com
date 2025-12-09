@@ -2,17 +2,23 @@ export interface User {
   id: string;
   name: string;
   email: string;
-  role: 'admin' | 'editor' | 'viewer';
+  role: 'admin' | 'client_owner' | 'client_editor' | 'client_viewer';
+  client_id?: number;
+  client_name?: string;
+  client_domain?: string;
 }
 
 export interface AuthState {
   user: User | null;
+  token: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   error: string | null;
   login: (email: string, password: string) => Promise<boolean>;
   logout: () => void;
   clearError: () => void;
+  setUser: (user: User | null) => void;
+  setToken: (token: string) => void;
 }
 
 export interface UiState {

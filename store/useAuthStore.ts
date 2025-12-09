@@ -1,8 +1,11 @@
+/// <reference types="vite/client" />
+
 import { create } from 'zustand';
 import { AuthState } from '../types';
 
 export const useAuthStore = create<AuthState>((set) => ({
   user: null,
+  token: null,
   isAuthenticated: false,
   isLoading: false,
   error: null,
@@ -10,31 +13,55 @@ export const useAuthStore = create<AuthState>((set) => ({
   login: async (email, password) => {
     set({ isLoading: true, error: null });
 
-    // Simulate network delay
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      });
 
-    if (email === 'demo@sistemglobal.com' && password === 'Demo123!') {
+      const data = await response.json();
+
+      if (!response.ok) {
+        set({
+          isLoading: false,
+          error: data.message || 'Giriş başarısız'
+        });
+        return false;
+      }
+
+      // Successful login
       set({
         isAuthenticated: true,
         isLoading: false,
-        user: {
-          id: '1',
-          name: 'GetKontento Admin',
-          email: email,
-          role: 'admin',
-        },
+        token: data.token,
+        user: data.user
       });
+
+      // Store token in localStorage
+      localStorage.setItem('auth_token', data.token);
+
       return true;
-    } else {
+    } catch (error) {
       set({
         isLoading: false,
-        error: 'E-posta veya şifre hatalı. Lütfen tekrar deneyiniz.',
+        error: 'Bağlantı hatası oluştu'
       });
       return false;
     }
   },
 
-  logout: () => set({ user: null, isAuthenticated: false }),
-  
+  logout: () => {
+    localStorage.removeItem('auth_token');
+    set({ user: null, token: null, isAuthenticated: false });
+  },
+
   clearError: () => set({ error: null }),
+
+  setUser: (user) => set({ user, isAuthenticated: !!user }),
+
+  setToken: (token) => {
+    localStorage.setItem('auth_token', token);
+    set({ token });
+  }
 }));

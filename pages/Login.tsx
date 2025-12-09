@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { Lock, Mail, Zap, ArrowRight, AlertCircle, Loader2 } from 'lucide-react';
 import { useAuthStore } from '../store/useAuthStore';
 
@@ -84,11 +84,11 @@ const Login: React.FC = () => {
           </div>
 
           <div className="flex items-center justify-between text-sm">
-             <label className="flex items-center gap-2 cursor-pointer text-slate-400 hover:text-slate-300 select-none">
-               <input type="checkbox" className="w-4 h-4 rounded border-slate-700 bg-[#0D0F12] text-[#FF5A2F] focus:ring-offset-[#0D0F12] focus:ring-2 focus:ring-[#FF5A2F]" />
-               Beni Hatırla
-             </label>
-             <a href="#" className="text-[#4EC9B0] font-medium hover:text-[#4EC9B0]/80 hover:underline">Şifremi unuttum</a>
+            <label className="flex items-center gap-2 cursor-pointer text-slate-400 hover:text-slate-300 select-none">
+              <input type="checkbox" className="w-4 h-4 rounded border-slate-700 bg-[#0D0F12] text-[#FF5A2F] focus:ring-offset-[#0D0F12] focus:ring-2 focus:ring-[#FF5A2F]" />
+              Beni Hatırla
+            </label>
+            <a href="#" className="text-[#4EC9B0] font-medium hover:text-[#4EC9B0]/80 hover:underline">Şifremi unuttum</a>
           </div>
 
           <button
@@ -110,9 +110,15 @@ const Login: React.FC = () => {
           </button>
         </form>
 
-        <div className="mt-8 pt-6 border-t border-[#2A2F38]/50 text-center">
+        <div className="mt-8 pt-6 border-t border-[#2A2F38]/50 text-center space-y-4">
+          <p className="text-slate-400 text-sm">
+            Hesabınız yok mu?{' '}
+            <Link to="/register" className="text-[#4EC9B0] font-medium hover:text-[#4EC9B0]/80 hover:underline">
+              Kayıt Olun
+            </Link>
+          </p>
           <p className="text-slate-500 text-sm">
-            Demo Hesap: <br/>
+            Demo Hesap: <br />
             <span className="text-slate-400 font-mono text-xs bg-[#0D0F12] px-2 py-1 rounded border border-[#2A2F38] mx-1">demo@sistemglobal.com</span>
             <span className="text-slate-400 font-mono text-xs bg-[#0D0F12] px-2 py-1 rounded border border-[#2A2F38] mx-1">Demo123!</span>
           </p>

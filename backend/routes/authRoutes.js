@@ -3,6 +3,7 @@ const router = express.Router();
 const { authMiddleware } = require('../middleware/authMiddleware');
 const {
     login,
+    selfRegister,
     register,
     me,
     changePassword
@@ -10,6 +11,7 @@ const {
 
 // Public routes
 router.post('/login', login);
+router.post('/self-register', selfRegister);
 
 // Protected routes
 router.get('/me', authMiddleware, me);

@@ -1,10 +1,19 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Search, CheckCircle, AlertTriangle, XCircle, Globe, ShieldCheck } from 'lucide-react';
+import { useAuthStore } from '../store/useAuthStore';
 
 const SeoAnalysis: React.FC = () => {
+  const { user } = useAuthStore();
   const [url, setUrl] = useState('');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [result, setResult] = useState<boolean>(false);
+
+  // Auto-populate domain from user's client
+  useEffect(() => {
+    if (user?.client_domain) {
+      setUrl(`https://${user.client_domain}`);
+    }
+  }, [user]);
 
   const handleAnalyze = (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,12 +42,23 @@ const SeoAnalysis: React.FC = () => {
             <Globe className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-[#FF5A2F] transition-colors" size={20} />
             <input
               type="url"
-              placeholder="https://sistemglobal.com.tr"
+              placeholder="https://sirketiniz.com"
               value={url}
               onChange={(e) => setUrl(e.target.value)}
+              disabled={!!user?.client_domain}
               required
-              className="w-full pl-12 pr-4 py-4 rounded-xl bg-[#0D0F12] border border-slate-700 text-slate-200 placeholder:text-slate-600 focus:border-[#FF5A2F] focus:ring-4 focus:ring-[#FF5A2F]/10 outline-none transition-all duration-300"
+              className={`w-full pl-12 pr-4 py-4 rounded-xl bg-[#0D0F12] border border-slate-700 text-slate-200 placeholder:text-slate-600 focus:border-[#FF5A2F] focus:ring-4 focus:ring-[#FF5A2F]/10 outline-none transition-all duration-300 ${user?.client_domain ? 'cursor-not-allowed opacity-75' : ''
+                }`}
+              title={user?.client_domain ? 'Domain kayıt sırasında belirlendi ve değiştirilemez' : ''}
             />
+            {user?.client_domain && (
+              <div className="absolute right-4 top-1/2 -translate-y-1/2">
+                <div className="flex items-center gap-2 bg-[#4EC9B0]/10 text-[#4EC9B0] text-xs px-3 py-1 rounded-full border border-[#4EC9B0]/20">
+                  <CheckCircle size={14} />
+                  <span className="font-medium">Kayıtlı Domain</span>
+                </div>
+              </div>
+            )}
           </div>
           <button
             type="submit"
@@ -58,6 +78,12 @@ const SeoAnalysis: React.FC = () => {
             )}
           </button>
         </form>
+
+        {user?.client_domain && (
+          <p className="text-xs text-slate-500 mt-3 text-center">
+            ℹ️ Domain adresi kayıt sırasında belirlenir ve güvenlik nedeniyle değiştirilemez
+          </p>
+        )}
       </div>
 
       {result && (
@@ -77,7 +103,7 @@ const SeoAnalysis: React.FC = () => {
             <div className="grid gap-4">
               <div className="flex items-start gap-4 p-5 bg-[#4EC9B0]/5 rounded-xl border border-[#4EC9B0]/10 hover:bg-[#4EC9B0]/10 transition-colors">
                 <div className="p-2 bg-[#4EC9B0]/10 rounded-full">
-                   <CheckCircle className="text-[#4EC9B0]" size={24} />
+                  <CheckCircle className="text-[#4EC9B0]" size={24} />
                 </div>
                 <div>
                   <h4 className="font-semibold text-slate-200 text-lg">SSL Sertifikası</h4>
@@ -86,19 +112,19 @@ const SeoAnalysis: React.FC = () => {
               </div>
 
               <div className="flex items-start gap-4 p-5 bg-amber-500/5 rounded-xl border border-amber-500/10 hover:bg-amber-500/10 transition-colors">
-                 <div className="p-2 bg-amber-500/10 rounded-full">
-                    <AlertTriangle className="text-amber-500" size={24} />
-                 </div>
+                <div className="p-2 bg-amber-500/10 rounded-full">
+                  <AlertTriangle className="text-amber-500" size={24} />
+                </div>
                 <div>
                   <h4 className="font-semibold text-slate-200 text-lg">Sayfa Hızı (LCP)</h4>
                   <p className="text-sm text-slate-400 mt-1">İlk içerik boyaması 2.8s sürdü. Görsel optimizasyonu gerekli.</p>
                 </div>
               </div>
 
-               <div className="flex items-start gap-4 p-5 bg-rose-500/5 rounded-xl border border-rose-500/10 hover:bg-rose-500/10 transition-colors">
-                 <div className="p-2 bg-rose-500/10 rounded-full">
-                    <XCircle className="text-rose-500" size={24} />
-                 </div>
+              <div className="flex items-start gap-4 p-5 bg-rose-500/5 rounded-xl border border-rose-500/10 hover:bg-rose-500/10 transition-colors">
+                <div className="p-2 bg-rose-500/10 rounded-full">
+                  <XCircle className="text-rose-500" size={24} />
+                </div>
                 <div>
                   <h4 className="font-semibold text-slate-200 text-lg">H1 Etiketi Kullanımı</h4>
                   <p className="text-sm text-slate-400 mt-1">Ana sayfada birden fazla H1 etiketi tespit edildi. Tek bir H1 kullanılmalıdır.</p>

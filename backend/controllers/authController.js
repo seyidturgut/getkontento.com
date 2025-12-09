@@ -1,6 +1,148 @@
+const { pool } = require('../config/db');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const { pool } = require('../config/db');
+
+/**
+ * Self-Registration - Kullanıcı kendi domain'i ile kayıt olur
+ * POST /api/auth/self-register
+ */
+const selfRegister = async (req, res) => {
+    try {
+        const { name, email, password, company_name, domain } = req.body;
+
+        // Validation
+        if (!name || !email || !password || !company_name || !domain) {
+            return res.status(400).json({
+                success: false,
+                message: 'Tüm alanlar gereklidir'
+            });
+        }
+
+        // Email validasyonu
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            return res.status(400).json({
+                success: false,
+                message: 'Geçersiz email adresi'
+            });
+        }
+
+        // Domain validasyonu
+        const domainRegex = /^[a-zA-Z0-9][a-zA-Z0-9-]{0,61}[a-zA-Z0-9]?\.[a-zA-Z]{2,}$/;
+        const cleanDomain = domain.replace(/^https?:\/\//, '').replace(/^www\./, '').split('/')[0];
+
+        if (!domainRegex.test(cleanDomain)) {
+            return res.status(400).json({
+                success: false,
+                message: 'Geçersiz domain adresi'
+            });
+        }
+
+        // Şifre uzunluğu kontrolü
+        if (password.length < 6) {
+            return res.status(400).json({
+                success: false,
+                message: 'Şifre en az 6 karakter olmalıdır'
+            });
+        }
+
+        // Email'in kullanımda olup olmadığını kontrol et
+        const [existingUsers] = await pool.execute(
+            'SELECT id FROM users WHERE email = ?',
+            [email]
+        );
+
+        if (existingUsers.length > 0) {
+            return res.status(400).json({
+                success: false,
+                message: 'Bu email adresi zaten kullanımda'
+            });
+        }
+
+        // Domain'in kullanımda olup olmadığını kontrol et
+        const [existingClients] = await pool.execute(
+            'SELECT id FROM clients WHERE domain = ?',
+            [cleanDomain]
+        );
+
+        if (existingClients.length > 0) {
+            return res.status(400).json({
+                success: false,
+                message: 'Bu domain zaten kayıtlı'
+            });
+        }
+
+        // Transaction başlat
+        const connection = await pool.getConnection();
+        await connection.beginTransaction();
+
+        try {
+            // 1. Client oluştur
+            const [clientResult] = await connection.execute(
+                `INSERT INTO clients (name, domain, plan, status) VALUES (?, ?, ?, ?)`,
+                [company_name, cleanDomain, 'Basic', 'active']
+            );
+
+            const clientId = clientResult.insertId;
+
+            // 2. Şifreyi hashle
+            const password_hash = await bcrypt.hash(password, 10);
+
+            // 3. Client owner kullanıcı oluştur
+            const [userResult] = await connection.execute(
+                `INSERT INTO users (client_id, name, email, password_hash, role, is_active) 
+         VALUES (?, ?, ?, ?, ?, ?)`,
+                [clientId, name, email, password_hash, 'client_owner', 1]
+            );
+
+            const userId = userResult.insertId;
+
+            // Transaction'ı commit et
+            await connection.commit();
+            connection.release();
+
+            // JWT token oluştur
+            const tokenPayload = {
+                id: userId,
+                role: 'client_owner',
+                client_id: clientId
+            };
+
+            const token = jwt.sign(tokenPayload, process.env.JWT_SECRET, {
+                expiresIn: '7d'
+            });
+
+            // Başarılı response
+            res.status(201).json({
+                success: true,
+                message: 'Kayıt başarılı! Giriş yapılıyor...',
+                token,
+                user: {
+                    id: userId,
+                    name,
+                    email,
+                    role: 'client_owner',
+                    client_id: clientId,
+                    client_name: company_name,
+                    client_domain: cleanDomain
+                }
+            });
+
+        } catch (error) {
+            // Transaction'ı geri al
+            await connection.rollback();
+            connection.release();
+            throw error;
+        }
+
+    } catch (error) {
+        console.error('Self register error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Kayıt işlemi sırasında bir hata oluştu'
+        });
+    }
+};
 
 /**
  * Login - Kullanıcı girişi
@@ -18,9 +160,13 @@ const login = async (req, res) => {
             });
         }
 
-        // Find user by email
+        // Find user by email with client info
         const [users] = await pool.execute(
-            'SELECT id, client_id, name, email, password_hash, role, is_active FROM users WHERE email = ?',
+            `SELECT u.id, u.client_id, u.name, u.email, u.password_hash, u.role, u.is_active,
+              c.name as client_name, c.domain as client_domain
+       FROM users u
+       LEFT JOIN clients c ON u.client_id = c.id
+       WHERE u.email = ?`,
             [email]
         );
 
@@ -71,7 +217,9 @@ const login = async (req, res) => {
                 name: user.name,
                 email: user.email,
                 role: user.role,
-                client_id: user.client_id
+                client_id: user.client_id,
+                client_name: user.client_name,
+                client_domain: user.client_domain
             }
         });
 
@@ -139,7 +287,7 @@ const register = async (req, res) => {
 
 /**
  * Me - Mevcut kullanıcı bilgilerini getir
- * GET /api/auth/me
+ * POST /api/auth/me
  */
 const me = async (req, res) => {
     try {
@@ -254,6 +402,7 @@ const changePassword = async (req, res) => {
 };
 
 module.exports = {
+    selfRegister,
     login,
     register,
     me,
