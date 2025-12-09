@@ -11,7 +11,7 @@ deployment:
     - /bin/cp public/.htaccess $DEPLOYPATH/.htaccess
     
     # Backend Deploy
-    - export BACKENDPATH=/home/USERNAME/repositories/getkontento/backend/
+    - export BACKENDPATH=/home/getkontento/repositories/getkontento.com/backend/
     - echo "Installing backend dependencies..."
     - cd backend
     - /bin/npm install --production
