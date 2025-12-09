@@ -1,0 +1,18 @@
+---
+deployment:
+  tasks:
+    # Frontend Build and Deploy
+    - export DEPLOYPATH=/home/USERNAME/public_html/
+    - echo "Building frontend..."
+    - /bin/npm install
+    - /bin/npm run build
+    - echo "Deploying frontend to public_html..."
+    - /bin/cp -R dist/* $DEPLOYPATH
+    - /bin/cp public/.htaccess $DEPLOYPATH/.htaccess
+    
+    # Backend Deploy
+    - export BACKENDPATH=/home/USERNAME/repositories/getkontento/backend/
+    - echo "Installing backend dependencies..."
+    - cd backend
+    - /bin/npm install --production
+    - echo "Deployment completed!"
